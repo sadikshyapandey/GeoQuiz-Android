@@ -8,6 +8,14 @@
     android:padding="24dp">
 
     <TextView
+        android:id="@+id/progress_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Question 1 of 6"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
         android:id="@+id/question_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -39,5 +47,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="CHEAT" />
+
+    <TextView
+        android:id="@+id/score_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Score: 0"
+        android:textSize="18sp"
+        android:layout_marginTop="16dp" />
 
 </LinearLayout>

@@ -5,18 +5,24 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
-    private var currentIndex = 0
-    private var score = 0
+    private lateinit var questionText: TextView
+    private lateinit var scoreText: TextView
+    private lateinit var progressText: TextView
+
+    private lateinit var trueButton: Button
+    private lateinit var falseButton: Button
+    private lateinit var nextButton: Button
+    private lateinit var cheatButton: Button
 
     private val questions = arrayOf(
         "The capital of France is Paris.",
-        "The Pacific Ocean is larger than the Atlantic Ocean.",
+        "The Pacific Ocean is the largest ocean on Earth.",
         "Australia is both a country and a continent.",
-        "The Nile River is in South America.",
+        "The Nile River is located in South America.",
         "Mount Everest is the tallest mountain above sea level.",
         "Canada is south of the United States."
     )
@@ -30,24 +36,37 @@ class MainActivity : ComponentActivity() {
         false
     )
 
-    private var answered = BooleanArray(questions.size)
+    private var currentQuestionIndex = 0
+    private var score = 0
+    private var answered = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
 
-        currentIndex = savedInstanceState?.getInt("currentIndex") ?: 0
-        score = savedInstanceState?.getInt("score") ?: 0
-        answered = savedInstanceState?.getBooleanArray("answered")
-            ?: BooleanArray(questions.size)
+        questionText = findViewById(R.id.question_text)
+        scoreText = findViewById(R.id.score_text)
+        progressText = findViewById(R.id.progress_text)
 
-        val questionText = findViewById<TextView>(R.id.question_text)
-        val trueButton = findViewById<Button>(R.id.true_button)
-        val falseButton = findViewById<Button>(R.id.false_button)
-        val nextButton = findViewById<Button>(R.id.next_button)
-        val cheatButton = findViewById<Button>(R.id.cheat_button)
+        trueButton = findViewById(R.id.true_button)
+        falseButton = findViewById(R.id.false_button)
+        nextButton = findViewById(R.id.next_button)
+        cheatButton = findViewById(R.id.cheat_button)
 
-        questionText.text = questions[currentIndex]
+        // Restore state after rotation
+        if (savedInstanceState != null) {
+            currentQuestionIndex =
+                savedInstanceState.getInt("current_question", 0)
+
+            score =
+                savedInstanceState.getInt("score", 0)
+
+            answered =
+                savedInstanceState.getBoolean("answered", false)
+        }
+
+        updateQuestion()
 
         trueButton.setOnClickListener {
             checkAnswer(true)
@@ -58,17 +77,7 @@ class MainActivity : ComponentActivity() {
         }
 
         nextButton.setOnClickListener {
-            if (currentIndex < questions.size - 1) {
-                currentIndex++
-                questionText.text = questions[currentIndex]
-            } else {
-                questionText.text =
-                    "Quiz Complete!\n\nScore: $score / ${questions.size}"
-
-                trueButton.isEnabled = false
-                falseButton.isEnabled = false
-                nextButton.isEnabled = false
-            }
+            moveToNextQuestion()
         }
 
         cheatButton.setOnClickListener {
@@ -76,27 +85,41 @@ class MainActivity : ComponentActivity() {
 
             intent.putExtra(
                 "answer",
-                answers[currentIndex]
+                answers[currentQuestionIndex]
             )
 
             startActivity(intent)
         }
     }
 
+    private fun updateQuestion() {
+        questionText.text = questions[currentQuestionIndex]
+
+        progressText.text =
+            "Question ${currentQuestionIndex + 1} of ${questions.size}"
+
+        scoreText.text = "Score: $score"
+
+        // Allow answering again for a new question
+        trueButton.isEnabled = !answered
+        falseButton.isEnabled = !answered
+
+        if (currentQuestionIndex == questions.size - 1) {
+            nextButton.text = "FINISH"
+        } else {
+            nextButton.text = "NEXT"
+        }
+    }
+
     private fun checkAnswer(userAnswer: Boolean) {
 
-        if (answered[currentIndex]) {
-            Toast.makeText(
-                this,
-                "You already answered this question.",
-                Toast.LENGTH_SHORT
-            ).show()
+        if (answered) {
             return
         }
 
-        answered[currentIndex] = true
+        answered = true
 
-        if (userAnswer == answers[currentIndex]) {
+        if (userAnswer == answers[currentQuestionIndex]) {
             score++
 
             Toast.makeText(
@@ -111,13 +134,45 @@ class MainActivity : ComponentActivity() {
                 Toast.LENGTH_SHORT
             ).show()
         }
+
+        scoreText.text = "Score: $score"
+
+        trueButton.isEnabled = false
+        falseButton.isEnabled = false
+    }
+
+    private fun moveToNextQuestion() {
+
+        if (currentQuestionIndex < questions.size - 1) {
+            currentQuestionIndex++
+            answered = false
+            updateQuestion()
+        } else {
+
+            Toast.makeText(
+                this,
+                "Quiz complete! Final score: $score/${questions.size}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putInt("currentIndex", currentIndex)
-        outState.putInt("score", score)
-        outState.putBooleanArray("answered", answered)
+        outState.putInt(
+            "current_question",
+            currentQuestionIndex
+        )
+
+        outState.putInt(
+            "score",
+            score
+        )
+
+        outState.putBoolean(
+            "answered",
+            answered
+        )
     }
 }
